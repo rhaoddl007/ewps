@@ -1,0 +1,256 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>EWP 실시간 급여 계산기</title>
+    <style>
+        :root {
+            --bg-main: #121212;
+            --card-bg: #1e1e1e;
+            --primary: #ffffff;
+            --accent: #3b82f6; 
+            --accent-bright: #60a5fa;
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+            --input-bg: #2d3748;
+            --border-color: #4a5568;
+            --day-color: #fbbf24;
+            --night-color: #818cf8;
+            --holiday-color: #f43f5e;
+            --help-color: #cbd5e1;
+        }
+
+        body { font-family: 'Pretendard', -apple-system, sans-serif; background-color: var(--bg-main); color: var(--text-main); margin: 0; padding: 10px; display: flex; justify-content: center; }
+        .app-container { background: var(--card-bg); width: 100%; max-width: 480px; border-radius: 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.5); padding: 25px 20px 20px; box-sizing: border-box; border: 1px solid #333; }
+        
+        .logo-area { text-align: center; margin-bottom: 20px; }
+        .logo-area img { max-width: 150px; border-radius: 8px; }
+
+        h1 { text-align: center; color: var(--primary); font-size: 24px; margin: 0 0 20px 0; font-weight: 900; letter-spacing: -0.5px; }
+        
+        details { background: #252525; border-radius: 12px; padding: 16px; margin-bottom: 25px; border: 1px solid var(--border-color); }
+        summary { font-weight: 800; color: var(--accent-bright); font-size: 16px; cursor: pointer; outline: none; }
+        .fixed-details { margin-top: 15px; }
+        
+        .fixed-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .fixed-item label { font-size: 14px; font-weight: 600; color: var(--text-sub); width: 35%; }
+        .fixed-item .custom-name { width: 35%; background: transparent; border: 1px dashed #4a5568; border-radius: 6px; color: var(--day-color); padding: 8px 5px; font-size: 14px; font-weight: 600; outline: none; }
+        .fixed-item input[type="number"] { width: 60%; padding: 12px; background-color: var(--input-bg); color: #fff; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; font-weight: 700; text-align: right; outline: none; box-sizing: border-box; }
+
+        .add-btn { width: 100%; background: transparent; color: var(--accent-bright); border: 2px dashed var(--accent-bright); padding: 14px; border-radius: 8px; font-size: 15px; font-weight: 700; margin-top: 10px; cursor: pointer; }
+
+        .section-title { font-size: 17px; font-weight: 800; color: var(--primary); margin: 30px 0 15px; display: flex; align-items: center; background: #2a2a2a; padding: 10px 15px; border-radius: 10px; }
+
+        .grid-1 { display: grid; grid-template-columns: 1fr; gap: 15px; margin-bottom: 15px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        
+        .input-group { display: flex; flex-direction: column; background: #252525; padding: 15px; border-radius: 12px; border: 1px solid #333; height: 100%; box-sizing: border-box; }
+        .input-group label { font-size: 16px; font-weight: 800; margin-bottom: 6px; }
+        .help-text { font-size: 13px; color: var(--help-color); margin-bottom: 12px; line-height: 1.4; word-break: keep-all; font-weight: 500; }
+
+        select.var-val { 
+            margin-top: auto;
+            width: 100%; padding: 14px; background-color: var(--input-bg); color: #fff; border: 2px solid var(--border-color); border-radius: 10px; font-size: 18px; font-weight: 800; text-align: center; outline: none; appearance: none; -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2394a3b8%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+            background-repeat: no-repeat; background-position: right 15px top 50%; background-size: 14px auto; cursor: pointer;
+        }
+
+        .lbl-night { color: var(--night-color); }
+        .lbl-holi { color: var(--holiday-color); }
+        .lbl-day { color: var(--day-color); }
+
+        .result-box { margin-top: 30px; background: #1a202c; padding: 25px 20px; border-radius: 16px; border: 2px solid var(--accent); box-shadow: 0 0 15px rgba(59, 130, 246, 0.2); }
+        .res-row { display: flex; justify-content: space-between; font-size: 15px; color: #cbd5e1; margin-bottom: 14px; font-weight: 600;}
+        .res-row.minus { color: #fca5a5; }
+        .res-divider { height: 1px; background: #475569; margin: 20px 0; }
+        .res-total { display: flex; justify-content: space-between; font-size: 20px; font-weight: 900; color: var(--primary); align-items: center; }
+        .res-total span:last-child { color: #34d399; font-size: 30px; letter-spacing: -1px; text-shadow: 0 0 10px rgba(52, 211, 153, 0.4); }
+
+        .reset-btn { width: 100%; background: #334155; color: white; border: none; padding: 15px; border-radius: 10px; font-size: 16px; font-weight: 800; margin-top: 20px; cursor: pointer; }
+        
+        .footer { text-align: center; margin-top: 30px; color: #64748b; font-size: 14px; font-weight: 800; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="logo-area">
+        <img src="http://www.ewps.co.kr/img/common/t_logo.png" alt="EWP 로고">
+    </div>
+
+    <h1>EWP 급여 자동 계산기 </h1>
+
+    <details>
+        <summary> 기본급 및 고정수당 확인/수정</summary>
+        <div class="fixed-details" id="fixedPayArea">
+            <div class="fixed-item"><label>기본급</label><input type="number" class="fixed-val" value="1828986"></div>
+            <div class="fixed-item"><label>직무수당</label><input type="number" class="fixed-val" value="200000"></div>
+            <div class="fixed-item"><label>직급수당</label><input type="number" class="fixed-val" value="60000"></div>
+            <div class="fixed-item"><label>교육수당</label><input type="number" class="fixed-val" value="65180"></div>
+            <div class="fixed-item"><label>특수작업</label><input type="number" class="fixed-val" value="200000"></div>
+            <div class="fixed-item"><label>교통비</label><input type="number" class="fixed-val" value="100000"></div>
+            <div class="fixed-item"><label>식비</label><input type="number" class="fixed-val" value="200000"></div>
+            <div class="fixed-item"><label style="color:#60a5fa;">직책수당</label><input type="number" class="fixed-val" value="0"></div>
+            
+            <div id="customContainer"></div>
+            <button class="add-btn" onclick="addCustomAllowance()">+ 명절 떡값 / 성과급 추가하기</button>
+        </div>
+    </details>
+
+    <div class="section-title">📅 1. 정규 스케줄 수당 (기본)</div>
+    <div class="grid-1">
+        <div class="input-group">
+            <label class="lbl-night">🌙 평일 야간 횟수</label>
+            <span class="help-text">달력의 '야' 개수 (빨간날 야간은 제외!)</span>
+            <select class="var-val" id="regNight"></select>
+        </div>
+    </div>
+    <div class="grid-2">
+        <div class="input-group">
+            <label class="lbl-holi">🧧 공휴일 출근</label>
+            <span class="help-text">빨간날 야간 갯수는 여기로</span>
+            <select class="var-val" id="regHoliWork"></select>
+        </div>
+        <div class="input-group">
+            <label class="lbl-holi">🧧 공휴일 휴무</label>
+            <select class="var-val" id="holiOff"></select>
+        </div>
+    </div>
+
+    <div class="section-title">🚨 2. 대근</div>
+    <div class="grid-2">
+        <div class="input-group">
+            <label class="lbl-day">☀️ 평일 주간 대근</label>
+            <select class="var-val" id="extraDay"></select>
+        </div>
+        <div class="input-group">
+            <label class="lbl-night">🌙 평일 야간 대근</label>
+            <select class="var-val" id="extraNight"></select>
+        </div>
+    </div>
+    <div class="grid-2">
+        <div class="input-group">
+            <label class="lbl-holi">🧧 공휴일 주간 대근</label>
+            <select class="var-val" id="holiDay"></select>
+        </div>
+        <div class="input-group">
+            <label class="lbl-holi">🧧 공휴일 야간 대근</label>
+            <select class="var-val" id="holiNight"></select>
+        </div>
+    </div>
+
+    <div class="result-box">
+        <div class="res-row"><span>고정급여 (성과급 포함)</span><span id="resFixed">0원</span></div>
+        <div class="res-row"><span>평일 야간수당</span><span id="resRegNight">0원</span></div>
+        <div class="res-row"><span>휴일수당 (스케줄 출근/휴무)</span><span id="resRegHoli">0원</span></div>
+        <div class="res-row"><span>추가 대근수당 총합</span><span id="resExtra">0원</span></div>
+        <div class="res-row"><span>총 급여 (세전)</span><span id="resGross" style="font-weight:800; color:#fff;">0원</span></div>
+        <div class="res-row minus"><span>예상 공제액 (약 12.8%)</span><span id="resTax">-0원</span></div>
+        
+        <div class="res-divider"></div>
+        
+        <div class="res-total">
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+                <span>내 통장 입금액</span>
+                <span style="font-size: 12px; color: #94a3b8; font-weight: 600;">(세금 절사 기준에 따라 오차범위 ±1~3천원)</span>
+            </div>
+            <span id="resNet">0원</span>
+        </div>
+    </div>
+
+    <button class="reset-btn" onclick="resetAll()">🔄 달이 바뀌었나요? 전체 0으로 초기화</button>
+
+    <div class="footer">만든사람 : 김경환</div>
+</div>
+
+<script>
+    const REG_NIGHT_PAY = 43450;     
+    const REG_HOLI_WORK_PAY = 246204; 
+    const HOLI_OFF_PAY = 152080;     
+    const EXTRA_DAY_PAY = 228100;    
+    const EXTRA_NIGHT_PAY = 271565;  
+    const HOLI_DAY_PAY = 398271;     
+    const HOLI_NIGHT_PAY = 398271 + 43448; 
+
+    function populateSelects() {
+        const selects = document.querySelectorAll('select.var-val');
+        selects.forEach(select => {
+            select.innerHTML = ''; 
+            
+            // 💡 평일 야간은 최대 10회, 나머지는 주 52시간 반영하여 최대 5회로 제한
+            let maxCount = (select.id === 'regNight') ? 10 : 5; 
+
+            for(let i=0; i<=maxCount; i++) {
+                let option = document.createElement('option');
+                option.value = i; option.text = i + "회";
+                if(select.id === 'regNight' && i === 8) option.selected = true; 
+                select.appendChild(option);
+            }
+            select.addEventListener('change', calculate);
+        });
+    }
+
+    function addCustomAllowance() {
+        const container = document.getElementById('customContainer');
+        const row = document.createElement('div');
+        row.className = 'fixed-item';
+        row.innerHTML = `
+            <input type="text" class="custom-name" value="보너스 수당">
+            <div style="display:flex; align-items:center; width:60%;">
+                <input type="number" class="fixed-val" value="0" style="width:100%; padding:12px;">
+                <span style="color:#fca5a5; margin-left:15px; font-size:26px; font-weight:900; cursor:pointer;" onclick="this.parentElement.parentElement.remove(); calculate();">×</span>
+            </div>
+        `;
+        container.appendChild(row);
+        row.querySelector('.fixed-val').addEventListener('input', calculate);
+        calculate();
+    }
+
+    function resetAll() {
+        document.querySelectorAll('select.var-val').forEach(select => { select.value = 0; });
+        document.getElementById('regNight').value = 8; // 평일 야간은 기본 8회로 복구
+        calculate();
+        window.scrollTo({ top: 0, behavior: 'smooth' }); // 위로 부드럽게 스크롤
+    }
+
+    function calculate() {
+        let totalFixedPay = 0;
+        document.querySelectorAll('.fixed-val').forEach(input => {
+            totalFixedPay += parseInt(input.value) || 0;
+        });
+
+        const vRegNight = parseInt(document.getElementById('regNight').value) || 0;
+        const vRegHoliWork = parseInt(document.getElementById('regHoliWork').value) || 0; 
+        const vHoliOff = parseInt(document.getElementById('holiOff').value) || 0;
+        const vExtraDay = parseInt(document.getElementById('extraDay').value) || 0;
+        const vExtraNight = parseInt(document.getElementById('extraNight').value) || 0;
+        const vHoliDay = parseInt(document.getElementById('holiDay').value) || 0;
+        const vHoliNight = parseInt(document.getElementById('holiNight').value) || 0;
+
+        const totalRegNight = vRegNight * REG_NIGHT_PAY;
+        const totalRegHoli = (vRegHoliWork * REG_HOLI_WORK_PAY) + (vHoliOff * HOLI_OFF_PAY);
+        const totalExtra = (vExtraDay * EXTRA_DAY_PAY) + (vExtraNight * EXTRA_NIGHT_PAY) + (vHoliDay * HOLI_DAY_PAY) + (vHoliNight * HOLI_NIGHT_PAY);
+        
+        const grossPay = totalFixedPay + totalRegNight + totalRegHoli + totalExtra;
+        const estimatedTax = Math.floor(grossPay * 0.1278);
+        const netPay = grossPay - estimatedTax;
+
+        document.getElementById('resFixed').innerText = totalFixedPay.toLocaleString() + "원";
+        document.getElementById('resRegNight').innerText = totalRegNight.toLocaleString() + "원";
+        document.getElementById('resRegHoli').innerText = totalRegHoli.toLocaleString() + "원";
+        document.getElementById('resExtra').innerText = totalExtra.toLocaleString() + "원";
+        document.getElementById('resGross').innerText = grossPay.toLocaleString() + "원";
+        document.getElementById('resTax').innerText = "-" + estimatedTax.toLocaleString() + "원";
+        document.getElementById('resNet').innerText = netPay.toLocaleString() + "원";
+    }
+
+    window.onload = function() {
+        populateSelects(); 
+        document.querySelectorAll('.fixed-val').forEach(input => input.addEventListener('input', calculate));
+        calculate(); 
+    };
+</script>
+
+</body>
+</html>
