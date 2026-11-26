@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -36,7 +36,10 @@
         .fixed-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .fixed-item label { font-size: 14px; font-weight: 600; color: var(--text-sub); width: 35%; }
         .fixed-item .custom-name { width: 35%; background: transparent; border: 1px dashed #4a5568; border-radius: 6px; color: var(--day-color); padding: 8px 5px; font-size: 14px; font-weight: 600; outline: none; }
-        .fixed-item input[type="number"] { width: 60%; padding: 12px; background-color: var(--input-bg); color: #fff; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; font-weight: 700; text-align: right; outline: none; box-sizing: border-box; }
+        .fixed-item input[type="number"], .fixed-item select { width: 60%; padding: 12px; background-color: var(--input-bg); color: #fff; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; font-weight: 700; text-align: right; outline: none; box-sizing: border-box; }
+
+        .fixed-item select { cursor: pointer; }
+        .fixed-item select:focus-visible { outline: 2px solid var(--accent-bright); }
 
         .add-btn { width: 100%; background: transparent; color: var(--accent-bright); border: 2px dashed var(--accent-bright); padding: 14px; border-radius: 8px; font-size: 15px; font-weight: 700; margin-top: 10px; cursor: pointer; }
 
@@ -84,17 +87,29 @@
     <details>
         <summary> 기본급 및 고정수당 확인/수정</summary>
         <div class="fixed-details" id="fixedPayArea">
-            <div class="fixed-item"><label>기본급</label><input type="number" class="fixed-val" value="1828986"></div>
+            <div class="fixed-item"><label for="basePay">기본급</label><input id="basePay" type="number" class="fixed-val" value="1903986"></div>
             <div class="fixed-item"><label>직무수당</label><input type="number" class="fixed-val" value="200000"></div>
-            <div class="fixed-item"><label>직급수당</label><input type="number" class="fixed-val" value="60000"></div>
-            <div class="fixed-item"><label>교육수당</label><input type="number" class="fixed-val" value="65180"></div>
+            <div class="fixed-item"><label for="rankAllowance">직급수당</label><input id="rankAllowance" type="number" class="fixed-val" value="60000" readonly></div>
+            <div class="fixed-item">
+                <label for="skillAllowance">직능급수당</label>
+                <select id="skillAllowance" class="fixed-val">
+                    <option value="0">0년차 · 0원</option>
+                    <option value="5000">1년차 · 5,000원</option>
+                    <option value="10000">2년차 · 10,000원</option>
+                    <option value="15000">3년차 · 15,000원</option>
+                </select>
+            </div>
+            <div class="fixed-item"><label for="securityAllowance">보안대응수당</label><input id="securityAllowance" type="number" class="fixed-val" value="30000" readonly></div>
+            <div class="fixed-item"><label for="educationAllowance">교육수당</label><input id="educationAllowance" type="number" class="fixed-val" value="65180"></div>
             <div class="fixed-item"><label>특수작업</label><input type="number" class="fixed-val" value="200000"></div>
             <div class="fixed-item"><label>교통비</label><input type="number" class="fixed-val" value="100000"></div>
             <div class="fixed-item"><label>식비</label><input type="number" class="fixed-val" value="200000"></div>
-            <div class="fixed-item"><label style="color:#60a5fa;">직책수당</label><input type="number" class="fixed-val" value="0"></div>
+            <div class="fixed-item"><label for="positionAllowance" style="color:#60a5fa;">직책수당</label><input id="positionAllowance" type="number" class="fixed-val" value="0"></div>
             
+            <p class="help-text">계산 시급 <strong id="hourlyRate">0원</strong><br>
+                기본급과 고정수당(교육수당 제외)에 떡값(연 160만 원), 복지포인트(연 70만 원)의 월 환산액을 더한 뒤 192시간으로 나눕니다.</p>
             <div id="customContainer"></div>
-            <button class="add-btn" onclick="addCustomAllowance()">+ 명절 떡값 / 성과급 추가하기</button>
+            <button class="add-btn" onclick="addCustomAllowance()">+ 이번 달 떡값 / 성과급 추가하기</button>
         </div>
     </details>
 
@@ -132,10 +147,12 @@
     <div class="grid-2">
         <div class="input-group">
             <label class="lbl-holi">🧧 공휴일 주간 대근</label>
+            <span class="help-text"> </span>
             <select class="var-val" id="holiDay"></select>
         </div>
         <div class="input-group">
             <label class="lbl-holi">🧧 공휴일 야간 대근</label>
+            <span class="help-text"></span>
             <select class="var-val" id="holiNight"></select>
         </div>
     </div>
@@ -146,7 +163,7 @@
         <div class="res-row"><span>휴일수당 (스케줄 출근/휴무)</span><span id="resRegHoli">0원</span></div>
         <div class="res-row"><span>추가 대근수당 총합</span><span id="resExtra">0원</span></div>
         <div class="res-row"><span>총 급여 (세전)</span><span id="resGross" style="font-weight:800; color:#fff;">0원</span></div>
-        <div class="res-row minus"><span>예상 공제액 (약 12.8%)</span><span id="resTax">-0원</span></div>
+        <div class="res-row minus"><span>예상 공제액 (12.5%)</span><span id="resTax">-0원</span></div>
         
         <div class="res-divider"></div>
         
@@ -165,13 +182,15 @@
 </div>
 
 <script>
-    const REG_NIGHT_PAY = 43450;     
-    const REG_HOLI_WORK_PAY = 246204; 
-    const HOLI_OFF_PAY = 152080;     
-    const EXTRA_DAY_PAY = 228100;    
-    const EXTRA_NIGHT_PAY = 271565;  
-    const HOLI_DAY_PAY = 398271;     
-    const HOLI_NIGHT_PAY = 398271 + 43448; 
+    const ANNUAL_HOLIDAY_BONUS = 1600000;
+    const ANNUAL_WELFARE_POINTS = 700000;
+    const MONTHLY_HOURS = 192;
+
+    const NIGHT_FACTOR = 3;
+    const HOLIDAY_WORK_FACTOR = 8 * 1.5 + 2.5 * 2;
+    const HOLIDAY_OFF_FACTOR = 10.5;
+    const EXTRA_DAY_FACTOR = 10.5 * 1.5;
+    const HOLIDAY_EXTRA_DAY_FACTOR = HOLIDAY_WORK_FACTOR + HOLIDAY_OFF_FACTOR;
 
     function populateSelects() {
         const selects = document.querySelectorAll('select.var-val');
@@ -216,9 +235,20 @@
 
     function calculate() {
         let totalFixedPay = 0;
-        document.querySelectorAll('.fixed-val').forEach(input => {
+        document.querySelectorAll('#fixedPayArea > .fixed-item .fixed-val').forEach(input => {
             totalFixedPay += parseInt(input.value) || 0;
         });
+
+        const educationAllowance = parseInt(document.getElementById('educationAllowance').value) || 0;
+        const monthlyEquivalent = (
+            ANNUAL_HOLIDAY_BONUS + ANNUAL_WELFARE_POINTS
+        ) / 12;
+        const hourlyRate = (totalFixedPay - educationAllowance + monthlyEquivalent) / MONTHLY_HOURS;
+
+        document.querySelectorAll('#customContainer .fixed-val').forEach(input => {
+            totalFixedPay += parseInt(input.value) || 0;
+        });
+
 
         const vRegNight = parseInt(document.getElementById('regNight').value) || 0;
         const vRegHoliWork = parseInt(document.getElementById('regHoliWork').value) || 0; 
@@ -228,18 +258,25 @@
         const vHoliDay = parseInt(document.getElementById('holiDay').value) || 0;
         const vHoliNight = parseInt(document.getElementById('holiNight').value) || 0;
 
-        const totalRegNight = vRegNight * REG_NIGHT_PAY;
-        const totalRegHoli = (vRegHoliWork * REG_HOLI_WORK_PAY) + (vHoliOff * HOLI_OFF_PAY);
-        const totalExtra = (vExtraDay * EXTRA_DAY_PAY) + (vExtraNight * EXTRA_NIGHT_PAY) + (vHoliDay * HOLI_DAY_PAY) + (vHoliNight * HOLI_NIGHT_PAY);
-        
-        const grossPay = totalFixedPay + totalRegNight + totalRegHoli + totalExtra;
-        const estimatedTax = Math.floor(grossPay * 0.1278);
+        const totalRegNight = Math.ceil(hourlyRate * vRegNight * NIGHT_FACTOR / 10) * 10;
+        const totalRegHoli = hourlyRate * (vRegHoliWork * HOLIDAY_WORK_FACTOR + vHoliOff * HOLIDAY_OFF_FACTOR);
+        const totalExtra = hourlyRate * (
+            (vExtraDay + vExtraNight) * EXTRA_DAY_FACTOR +
+            (vHoliDay + vHoliNight) * HOLIDAY_EXTRA_DAY_FACTOR +
+            (vExtraNight + vHoliNight) * NIGHT_FACTOR
+        );
+
+        const grossPay = Math.round(totalFixedPay + totalRegNight + totalRegHoli + totalExtra);
+        const estimatedTax = Math.floor(grossPay * 12.5 / 100);
         const netPay = grossPay - estimatedTax;
 
+        document.getElementById('hourlyRate').innerText = hourlyRate.toLocaleString('ko-KR', {
+            minimumFractionDigits: 2, maximumFractionDigits: 2
+        }) + "원";
         document.getElementById('resFixed').innerText = totalFixedPay.toLocaleString() + "원";
         document.getElementById('resRegNight').innerText = totalRegNight.toLocaleString() + "원";
-        document.getElementById('resRegHoli').innerText = totalRegHoli.toLocaleString() + "원";
-        document.getElementById('resExtra').innerText = totalExtra.toLocaleString() + "원";
+        document.getElementById('resRegHoli').innerText = Math.round(totalRegHoli).toLocaleString() + "원";
+        document.getElementById('resExtra').innerText = Math.round(totalExtra).toLocaleString() + "원";
         document.getElementById('resGross').innerText = grossPay.toLocaleString() + "원";
         document.getElementById('resTax').innerText = "-" + estimatedTax.toLocaleString() + "원";
         document.getElementById('resNet').innerText = netPay.toLocaleString() + "원";
@@ -247,7 +284,8 @@
 
     window.onload = function() {
         populateSelects(); 
-        document.querySelectorAll('.fixed-val').forEach(input => input.addEventListener('input', calculate));
+        document.querySelectorAll('input.fixed-val').forEach(input => input.addEventListener('input', calculate));
+        document.getElementById('skillAllowance').addEventListener('change', calculate);
         calculate(); 
     };
 </script>
